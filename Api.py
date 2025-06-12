@@ -1,3 +1,5 @@
+"""Simple API used to exchange game state with RL environment."""
+
 import pygame
 import math
 import json
@@ -14,6 +16,7 @@ B = ""
 from Vars import SPEED
 
 class Api():
+	"""Container for all data exchanged with an agent."""
 
 	def __init__(self):
 		self.input()
@@ -203,6 +206,7 @@ class Api():
 			self.input.restart = True
 
 def create_json(param1, param2, param3, param4):
+	"""Reset dump files and write meta information."""
 	global bot_killed_projectiles, player_damaged_projectiles
 	bot_killed_projectiles = []
 	player_damaged_projectiles = []

@@ -1,3 +1,5 @@
+"""Enemy entity that chases the player and shoots."""
+
 import pygame
 import math
 from Projectile import Projectile
@@ -5,14 +7,20 @@ from Projectile import Projectile
 from Vars import SPEED
 
 def normalize_vector(vector):
+    """Normalize a vector returning a list with length 1."""
     if vector == [0, 0]:
         return [0, 0]
     pythagoras = math.sqrt(vector[0]*vector[0] + vector[1]*vector[1])
     return (vector[0] / pythagoras, vector[1] / pythagoras)
 
 class Enemy(pygame.sprite.Sprite):
+    """AI controlled opponent."""
+
+    # Projectiles fired by all enemies
     projectiles = pygame.sprite.Group()
+
     def __init__(self, pos):
+        """Spawn enemy at a given position."""
         super().__init__()
         self.image = pygame.Surface([8, 8])
         self.image.fill(pygame.Color('black'))
@@ -28,6 +36,7 @@ class Enemy(pygame.sprite.Sprite):
         self.timestamp_start=pygame.time.get_ticks()
         self.timestamp_end=0
     def move(self, enemies, playerPos, tDelta):
+        """Move towards the player and avoid overlapping with other enemies."""
         self.movementVector = (playerPos[0] - self.pos[0],
                                playerPos[1] - self.pos[1])
         self.movementVector = normalize_vector(self.movementVector)
@@ -52,6 +61,7 @@ class Enemy(pygame.sprite.Sprite):
         self.timestamp_end=pygame.time.get_ticks()
 
     def shoot(self, playerPos):
+        """Fire a projectile towards the player if cooldown allows."""
         currentTime = pygame.time.get_ticks()
         if currentTime - self.lastShot > self.weaponCooldown:
             direction = (playerPos[0] - self.pos[0], playerPos[1] - self.pos[1])
@@ -61,6 +71,7 @@ class Enemy(pygame.sprite.Sprite):
                                             normalize_vector(direction),
                                             5 * SPEED, 2000, (255, 0, 0)))
     def __str__(self):
+        """Return printable representation used in logs."""
         return (
             "Enemy[pos ({0}, {1}); movementVector ({2}, {3}); lastShot {4}; timestamp_start {5}; timestamp_end {6}]\n".format(
                 self.pos[0],
@@ -74,7 +85,9 @@ class Enemy(pygame.sprite.Sprite):
         )
 
     def get_pos(self):
+        """Return current position of the enemy."""
         return self.pos
 
     def render(self, surface):
+        """Draw enemy on the given surface."""
         surface.blit(self.image, self.pos)

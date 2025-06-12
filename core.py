@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Main game loop and event processing for the shooter."""
 
 import pygame
 import random
@@ -33,6 +33,7 @@ score = 0
 clock = pygame.time.Clock()
 
 def move_entities(hero, enemies, timeDelta):
+    """Update all sprites and handle collisions."""
     score = 0
     hero.sprite.move(screen.get_size(), timeDelta)
     for enemy in enemies:
@@ -65,6 +66,7 @@ def move_entities(hero, enemies, timeDelta):
     return score
 
 def render_entities(hero, enemies):
+    """Draw all sprites on the screen."""
     hero.sprite.render(screen)
     for proj in Player.projectiles:
         proj.render(screen)
@@ -74,6 +76,7 @@ def render_entities(hero, enemies):
         enemy.render(screen)
     
 def process_keys(keys, hero):
+    """Translate pressed keys into player actions."""
     if keys[pygame.K_w]:
         hero.sprite.movementVector[1] -= 1
     if keys[pygame.K_a]:
@@ -90,12 +93,14 @@ def process_keys(keys, hero):
         hero.sprite.equippedWeapon = hero.sprite.availableWeapons[2]
         
 def process_mouse(mouse, hero):
+    """Handle mouse actions such as shooting."""
     if mouse[0]:
         hero.sprite.shoot(pygame.mouse.get_pos())
         api.data_Shoot.update_data_Shoot(api.data_Shoot, hero.sprite.equippedWeapon)
 
 
 def process_api(api, hero):
+    """Apply actions coming from the API."""
     hero.sprite.movementVector[0] = api.input.move[0] #-1, 1 double
     hero.sprite.movementVector[1] = api.input.move[1] #-1, 1 double
     if api.input.shoot:
@@ -104,6 +109,7 @@ def process_api(api, hero):
         api.data_Shoot.update_data_Shoot(api.data_Shoot, hero.sprite.equippedWeapon)
 
 def game_loop():
+    """Main gameplay loop."""
     done = False
     hero = pygame.sprite.GroupSingle(Player(screen.get_size()))
     enemies = pygame.sprite.Group()

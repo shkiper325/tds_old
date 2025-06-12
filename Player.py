@@ -1,3 +1,5 @@
+"""Player entity definition and movement logic."""
+
 import pygame
 import math
 import Weapon
@@ -7,14 +9,20 @@ from Vars import SPEED
 PLAYERCOLOR = (255,   0,   0)
 
 def normalize_vector(vector):
+    """Return a normalized copy of a 2D vector."""
     pythagoras = math.sqrt(vector[0]*vector[0] + vector[1]*vector[1])
     if pythagoras < 1e-5:
-        return [0, 0]    
+        return [0, 0]
     return (vector[0] / pythagoras, vector[1] / pythagoras)
 
 class Player(pygame.sprite.Sprite):
+    """Main controllable character."""
+
+    # Group used to store projectiles spawned by all players
     projectiles = pygame.sprite.Group()
+
     def __init__(self, screenSize):
+        """Create a player centered on the screen."""
         super().__init__()
         self.image = pygame.Surface([8, 8])
         self.image.fill(PLAYERCOLOR)
@@ -33,6 +41,7 @@ class Player(pygame.sprite.Sprite):
         self.equippedWeapon = self.availableWeapons[0]
 
     def move(self, screenSize, tDelta):
+        """Move the player according to current movement vector."""
         self.movementVector = normalize_vector(self.movementVector)
         newPos = (self.pos[0] + self.movementVector[0]*self.movementSpeed*tDelta,
                   self.pos[1] + self.movementVector[1]*self.movementSpeed*tDelta)
@@ -55,9 +64,11 @@ class Player(pygame.sprite.Sprite):
         self.movementVector = [0, 0]
         
     def shoot(self, mousePos):
+        """Fire currently equipped weapon towards the given position."""
         self.equippedWeapon.shoot(self, mousePos)
 
     def __str__(self):
+        """Return a string representation useful for logging."""
         return "Player [pos ({0}, {1}); movementVector ({2}, {3}); health {4}; alive {5}]\n".format(
             self.pos[0],
             self.pos[1],
@@ -68,7 +79,9 @@ class Player(pygame.sprite.Sprite):
         )
 
     def get_pos(self):
+        """Return current player position."""
         return self.pos
         
     def render(self, surface):
+        """Draw player sprite on the provided surface."""
         surface.blit(self.image, self.pos)
