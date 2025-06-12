@@ -30,7 +30,7 @@ def main():
     for _ in tqdm(range(ROLLOUTS)):
         obs = env.reset()
         done = False
-        while not done
+        while not done:
             ticks_2 += 1
             action, _state = model.predict(obs)
             obs, reward, done, info = env.step(action)

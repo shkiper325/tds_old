@@ -58,7 +58,14 @@ class Player(pygame.sprite.Sprite):
         self.equippedWeapon.shoot(self, mousePos)
 
     def __str__(self):
-        return "Player [pos ({0}, {1}); movementVector ({2}, {3}); health {4}; alive {5}]\n".format(self.pos[0],self.pos[1],self.movementVector[0], self.movementVector[0], self.health, self.alive)
+        return "Player [pos ({0}, {1}); movementVector ({2}, {3}); health {4}; alive {5}]\n".format(
+            self.pos[0],
+            self.pos[1],
+            self.movementVector2[0],
+            self.movementVector2[1],
+            self.health,
+            self.alive,
+        )
 
     def get_pos(self):
         return self.pos

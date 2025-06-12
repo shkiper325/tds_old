@@ -61,7 +61,17 @@ class Enemy(pygame.sprite.Sprite):
                                             normalize_vector(direction),
                                             5 * SPEED, 2000, (255, 0, 0)))
     def __str__(self):
-        return "Enemy[pos ({0}, {1}); movementVector ({2}, {3}); lastShot {4}; timestamp_start {5}; timestamp_end {6}]\n".format(self.pos[0],self.pos[1],self.movementVector[0], self.movementVector[0], self.lastShot, self.timestamp_start, self.timestamp_end)
+        return (
+            "Enemy[pos ({0}, {1}); movementVector ({2}, {3}); lastShot {4}; timestamp_start {5}; timestamp_end {6}]\n".format(
+                self.pos[0],
+                self.pos[1],
+                self.movementVector2[0],
+                self.movementVector2[1],
+                self.lastShot,
+                self.timestamp_start,
+                self.timestamp_end,
+            )
+        )
 
     def get_pos(self):
         return self.pos
