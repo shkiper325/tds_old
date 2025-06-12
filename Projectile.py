@@ -18,7 +18,14 @@ class Projectile(pygame.sprite.Sprite):
         self.damagedAt = 0
 
     def __str__(self):
-        return "Projectile [pos ({0}, {1}); movementVector ({2}, {3}); createdAt {4}; damagedAt {5}] \n".format(self.pos[0],self.pos[1],self.movementVector[0], self.movementVector[0], self.createdAt, self.damagedAt)
+        return "Projectile [pos ({0}, {1}); movementVector ({2}, {3}); createdAt {4}; damagedAt {5}] \n".format(
+            self.pos[0],
+            self.pos[1],
+            self.movementVector[0],
+            self.movementVector[1],
+            self.createdAt,
+            self.damagedAt,
+        )
         
     def move(self, surfaceSize, tDelta):
         if pygame.time.get_ticks() > self.createdAt + self.lifetime:

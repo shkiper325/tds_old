@@ -55,7 +55,14 @@ class Api():
 			self.movementVector = player.movementVector2
 
 		def __str__(self):
-			return "Player [pos ({0}, {1}); movementVector ({2}, {3}); health {4}; alive {5}]\n".format(self.pos[0],self.pos[1],self.movementVector[0], self.movementVector[0], self.health, self.alive)
+                        return "Player [pos ({0}, {1}); movementVector ({2}, {3}); health {4}; alive {5}]\n".format(
+                            self.pos[0],
+                            self.pos[1],
+                            self.movementVector[0],
+                            self.movementVector[1],
+                            self.health,
+                            self.alive,
+                        )
 
 	class data_Shoot():
 		lastShot = 0 
@@ -88,7 +95,14 @@ class Api():
 		def __str__(self):
 			A = "Enemy_Projectiles \n[\n"
 			for proj in self.projectiles:
-				A += "Projectile [pos ({0}, {1}); movementVector ({2}, {3}); createdAt {4}; damagedAt {5}] \n".format(proj.pos[0],proj.pos[1],proj.movementVector[0], proj.movementVector[0], proj.createdAt, proj.damagedAt)
+                                A += "Projectile [pos ({0}, {1}); movementVector ({2}, {3}); createdAt {4}; damagedAt {5}] \n".format(
+                                    proj.pos[0],
+                                    proj.pos[1],
+                                    proj.movementVector[0],
+                                    proj.movementVector[1],
+                                    proj.createdAt,
+                                    proj.damagedAt,
+                                )
 			A+= "]\n"
 			return A
 
@@ -109,7 +123,14 @@ class Api():
 		def __str__(self):
 			A = "Player_Projectiles \n[\n"
 			for proj in self.projectiles:
-				A += "Projectile [pos ({0}, {1}); movementVector ({2}, {3}); createdAt {4}; damagedAt {5}] \n".format(proj.pos[0],proj.pos[1],proj.movementVector[0], proj.movementVector[0], proj.createdAt, proj.damagedAt)
+                                A += "Projectile [pos ({0}, {1}); movementVector ({2}, {3}); createdAt {4}; damagedAt {5}] \n".format(
+                                    proj.pos[0],
+                                    proj.pos[1],
+                                    proj.movementVector[0],
+                                    proj.movementVector[1],
+                                    proj.createdAt,
+                                    proj.damagedAt,
+                                )
 			A+= "]\n"
 			return A
 
@@ -128,7 +149,15 @@ class Api():
 		def __str__(self):
 			A = "Enemies \n[\n"
 			for enemy in self.enemies:
-				A += "Enemy[pos ({0}, {1}); movementVector ({2}, {3}); lastShot {4}; timestamp_start {5}; timestamp_end {6}]\n".format(enemy.pos[0],enemy.pos[1],enemy.movementVector2[0], enemy.movementVector2[0], enemy.lastShot, enemy.timestamp_start, enemy.timestamp_end)
+                                A += "Enemy[pos ({0}, {1}); movementVector ({2}, {3}); lastShot {4}; timestamp_start {5}; timestamp_end {6}]\n".format(
+                                    enemy.pos[0],
+                                    enemy.pos[1],
+                                    enemy.movementVector2[0],
+                                    enemy.movementVector2[1],
+                                    enemy.lastShot,
+                                    enemy.timestamp_start,
+                                    enemy.timestamp_end,
+                                )
 			A += "]\n"
 			return A
 
