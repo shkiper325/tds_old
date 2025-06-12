@@ -1,3 +1,5 @@
+"""Gym-compatible environment wrapping the shooter game."""
+
 import numpy as np
 
 from core import *
@@ -7,6 +9,7 @@ from utils import *
 import gym
 
 def i_to_dir_8(i):
+    """Map index to direction in 8-way movement."""
     if i == 0:
         return (1, 0)
     elif i == 1:
@@ -28,6 +31,7 @@ def i_to_dir_8(i):
         quit(1)
 
 def i_to_dir_4(i):
+    """Map index to direction in 4-way movement."""
     if i == 0:
         return (1, 0)
     elif i == 1:
@@ -41,7 +45,9 @@ def i_to_dir_4(i):
         quit(1)
 
 class Env(gym.Env):
+    """OpenAI Gym environment wrapping the shooter game for training."""
     def __init__(self, abc=None):
+        """Initialize the observation and action spaces."""
         self.observation_space = gym.spaces.Box(
             low = -np.ones((IN_DIM,), dtype = np.float32) - 0.01,
             high = np.ones((IN_DIM,), dtype = np.float32) + 0.01,
@@ -53,6 +59,7 @@ class Env(gym.Env):
         self.reset()
 
     def get_state(self):
+        """Collect and normalize features describing current game state."""
         global api
 
         H = 600
@@ -107,6 +114,7 @@ class Env(gym.Env):
         return features
 
     def reset(self):
+        """Reset the game and environment state."""
         global hero, enemies
 
         hero = pygame.sprite.GroupSingle(Player(screen.get_size()))
@@ -121,6 +129,7 @@ class Env(gym.Env):
         return self.get_state() #self.get_state()
         
     def step(self, action):
+        """Execute one environment step with the provided action."""
         global hero
         global done
         global enemies
@@ -190,5 +199,6 @@ class Env(gym.Env):
                 dict()
 
     def render(self, mode=None):
+        """Rendering not implemented for this environment."""
         pass
-        #print('Frags:', self.frags, '|', 'Score:', self.cum_reward)
+        # print('Frags:', self.frags, '|', 'Score:', self.cum_reward)
