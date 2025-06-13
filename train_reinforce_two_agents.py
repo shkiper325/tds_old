@@ -97,6 +97,8 @@ class PvPEnvTwoAgents(PvPEnv):
         if self.steps > 2000:
             done = True
 
+        reward = np.tanh(reward)
+
         return (obs1, obs2), (reward, -reward), done, {}
 
 
@@ -104,11 +106,11 @@ class Policy(nn.Module):
     def __init__(self, obs_dim, action_dim):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(obs_dim, 128),
+            nn.Linear(obs_dim, 1280),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(1280, 1280),
             nn.ReLU(),
-            nn.Linear(128, action_dim),
+            nn.Linear(1280, action_dim),
             nn.Softmax(dim=-1),
         )
 
