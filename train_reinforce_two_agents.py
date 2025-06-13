@@ -190,4 +190,4 @@ def train(num_episodes=1000, verbose=False):
 
 
 if __name__ == "__main__":
-    train()
+    train(verbose=True)
