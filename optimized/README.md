@@ -64,14 +64,18 @@ python train.py --episodes 100 --verbose
 
 ### Simulation Speed Control
 
-The `--speed` parameter allows you to control simulation speed for faster rollouts:
+The `--speed` parameter allows you to control simulation speed for faster rollouts.
+With the current implementation a value greater than `1.0` accelerates
+the entire simulation by that factor:
 
 - `--speed 1.0` - Normal speed (default)
 - `--speed 5.0` - 5x faster (good for training)
 - `--speed 10.0` - 10x faster (good for evaluation)
 - `--speed 0.5` - 2x slower (good for debugging/visualization)
 
-**Note**: Higher speeds make physics run faster but don't significantly reduce training time since most time is spent on neural network computations.
+**Note**: Increasing the speed multiplies the environment time step, so
+episodes finish proportionally faster which can considerably reduce
+training or evaluation time.
 
 ### Evaluation
 
