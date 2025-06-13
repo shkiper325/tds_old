@@ -23,6 +23,16 @@ if __name__ == "__main__":
 
     player1 = Player(size)
     player2 = Player(size)
+
+    # Increase sprite size for both players
+    bigger = 16
+    for p in (player1, player2):
+        p.image = pygame.Surface([bigger, bigger])
+        p.image.fill((255, 0, 0))
+        p.rect = p.image.get_rect(topleft=p.pos)
+        # Slow down movement speed
+        p.movementSpeed *= 0.5
+
     player2.pos = [size[0] // 4, size[1] // 2]
     player2.rect.topleft = player2.pos
 
