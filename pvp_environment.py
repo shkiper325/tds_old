@@ -225,7 +225,7 @@ class PvPEnvironment(gym.Env):
             "episode_rewards": self.episode_rewards.copy()
         }
         
-        return (obs1, obs2), (np.tanh(reward1), np.tanh(reward2)), done, info
+        return (obs1, obs2), (reward1, reward2), done, info
     
     def _handle_collisions(self):
         """Handle projectile-player collisions."""
