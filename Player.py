@@ -24,7 +24,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, screenSize):
         """Create a player centered on the screen."""
         super().__init__()
-        self.image = pygame.Surface([8, 8])
+        self.image = pygame.Surface([50, 50])
         self.image.fill(PLAYERCOLOR)
         self.rect = self.image.get_rect(x=screenSize[0]//2,
                                         y=screenSize[1]//2)
