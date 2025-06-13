@@ -5,7 +5,7 @@ import numpy as np
 import gym
 from gym import spaces
 from entities import Player, Projectile
-from utils import normalize_vector, distance, angle_between, flatten_features, get_4_directions, PI
+from utils import normalize_vector, distance, angle_between, flatten_features, get_4_directions, PI, SPEED
 
 class PvPEnvironment(gym.Env):
     """Two-agent PvP environment with continuous action space."""
@@ -172,6 +172,7 @@ class PvPEnvironment(gym.Env):
         dt = self.clock.get_time() / 1000.0  # Scale simulation time
         if dt > 0.05:
             dt = 0.05
+
         
         # Process player 1 action
         move_action1 = action1[:2]

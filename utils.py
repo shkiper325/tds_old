@@ -1,116 +1,80 @@
-import os
+"""Unified utility functions for the shooter game."""
 
 import numpy as np
-
-# import torch
-# import torch.nn as nn
-
-from Vars import *
-
-# def save(data, fn):
-#     if fn is None:
-#         fn = 'checkpoint'
-
-#     torch.save(data, fn)
-
-# def load(fn):
-#     if fn is None:
-#         fn = 'checkpoint'
-
-#     return torch.load(fn)
+import math
 
 PI = 3.1415
 
-def dist(x, y):
-    return np.sqrt((x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2)
+def normalize_vector(vector):
+    """Return a normalized copy of a 2D vector."""
+    if isinstance(vector, list):
+        vector = np.array(vector)
+    
+    norm = np.linalg.norm(vector)
+    if norm < 1e-5:
+        return np.zeros_like(vector)
+    return vector / norm
 
-def dirac_delta(i, n, dtype=int):
-    ret =  np.zeros((n,), dtype=dtype)
-    ret[i] = 1
+def normalize_vectors(vectors):
+    """Normalize a list of vectors."""
+    return [normalize_vector(v) for v in vectors]
 
-    return ret
+def distance(pos1, pos2):
+    """Calculate Euclidean distance between two points."""
+    return np.linalg.norm(np.array(pos1) - np.array(pos2))
 
-def angle(v_start, v_end):
-    diff = np.array(v_end) - np.array(v_start)
+def angle_between(pos1, pos2):
+    """Calculate angle from pos1 to pos2."""
+    diff = np.array(pos2) - np.array(pos1)
     x, y = diff
-
-    if x < 1e-5 and y < 1e-5:
+    
+    if abs(x) < 1e-5 and abs(y) < 1e-5:
         return 0
+    
+    angle = np.arccos(np.clip(x / distance(pos1, pos2), -1, 1))
+    if y < 0:
+        angle = 2 * PI - angle
+    
+    return angle
+
+def rotate_vector(vector, theta):
+    """Rotate a vector by theta radians."""
+    cos_theta = math.cos(theta)
+    sin_theta = math.sin(theta)
+    return np.array([
+        vector[0] * cos_theta - vector[1] * sin_theta,
+        vector[0] * sin_theta + vector[1] * cos_theta
+    ])
+
+def flatten_features(feature_list):
+    """Flatten a list of features into a single numpy array."""
+    flattened = []
+    for feature in feature_list:
+        flattened.append(np.array(feature).flatten())
+    return np.concatenate(flattened)
+
+# Action space utilities
+def continuous_to_discrete_move(move_vec):
+    """Convert continuous movement to 4-directional discrete."""
+    x, y = move_vec
+    if abs(x) > abs(y):
+        return (1, 0) if x > 0 else (-1, 0)
     else:
-        angle = np.arccos(x / dist(diff, [0, 0]))
-        if y < 0:
-            angle = 2 * PI - angle
+        return (0, 1) if y > 0 else (0, -1)
 
-        return angle
+def get_8_directions():
+    """Get 8 directional unit vectors."""
+    directions = []
+    for i in range(8):
+        angle = i * PI / 4
+        directions.append(np.array([math.cos(angle), math.sin(angle)]))
+    return directions
 
-def get_last_epoch():
-    fns = os.listdir('models')
-
-    if len(fns) == 0:
-        return -1
-
-    epochs = [int(x.split('.')[0]) for x in fns]
-    return max(epochs)
-
-def slicing_mean(n, data):
-    window = np.ones(shape=(n,)) / n
-
-    ret = []
-    for i in range(len(data) - n):
-        ret.append(np.sum(window * data[i:i+n]))
-
-    return ret
-
-def norm(x):
-    return dist(x, [0, 0])
-
-def normalize(l):
-    ret = []
-
-    for x in l:
-        if norm(x) < 1e-5:
-            ret.append([0, 0])
-        else:
-            n = norm(x)
-            ret.append([x[0] / n, x[1] / n])
-
-    return ret
-
-def i_to_dir(i):
-    if i == 0:
-        return np.array([1, 0])
-    elif i == 1:
-        return np.array([1, 1]) / np.sqrt(2)
-    elif i == 2:
-        return np.array([0, 1])
-    elif i == 3:
-        return np.array([-1, 1]) / np.sqrt(2)
-    elif i == 4:
-        return np.array([-1, 0])
-    elif i == 5:
-        return np.array([-1, -1]) / np.sqrt(2)
-    elif i == 6:
-        return np.array([0, -1])
-    elif i == 7:
-        return np.array([1, -1]) / np.sqrt(2)
-    else:
-        print('Error')
-        quit(1)
-
-def flatten_them_all(l):
-    ret = []
-    for x in l:
-        ret.append(np.array(x).flatten())
-    ret = np.concatenate(ret)
-
-    return ret
-
-# def init_weights(m):
-#     if type(m) in [nn.Conv2d, nn.Linear, nn.ConvTranspose2d]:
-#         torch.nn.init.normal_(m.weight.data, mean=0, std=INIT_STD)
-#         if m.bias is not None:
-#             torch.nn.init.normal_(m.bias.data, mean=0, std=INIT_STD)
-#     elif type(m) in [nn.BatchNorm2d, nn.LeakyReLU, nn.ReLU, nn.Sequential, nn.Tanh]:
-#         return
-#     else:
-#         print('Couldn\'t init wieghts of layer with type:', type(m))
+def get_4_directions():
+    """Get 4 directional unit vectors."""
+    return [
+        np.array([1, 0]),   # Right
+        np.array([0, 1]),   # Down
+        np.array([-1, 0]),  # Left
+        np.array([0, -1])   # Up
+    ]
