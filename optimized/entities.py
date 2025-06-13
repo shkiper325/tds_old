@@ -141,7 +141,7 @@ class Player(pygame.sprite.Sprite):
         self.pos = np.array([screen_size[0] // 2, screen_size[1] // 2], dtype=float)
         self.velocity = np.array([0.0, 0.0])
         # Movement speed in pixels per simulated second
-        self.max_speed = 150.0
+        self.max_speed = 450.0
         self.health = 3
         self.max_health = 3
         self.alive = True

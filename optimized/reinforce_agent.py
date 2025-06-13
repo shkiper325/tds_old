@@ -22,7 +22,6 @@ class PolicyNetwork(nn.Module):
             layers.extend([
                 nn.Linear(prev_dim, hidden_dim),
                 nn.ReLU(),
-                nn.Dropout(0.1)
             ])
             prev_dim = hidden_dim
         
@@ -60,10 +59,8 @@ class REINFORCEAgent:
         self.value_net = nn.Sequential(
             nn.Linear(obs_dim, 128),
             nn.ReLU(),
-            nn.Dropout(0.1),
             nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Dropout(0.1),
             nn.Linear(128, 1)
         ).to(self.device)
         

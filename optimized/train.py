@@ -4,7 +4,6 @@ import os
 import argparse
 from pvp_environment import PvPEnvironment
 from reinforce_agent import REINFORCEAgent, TrainingManager
-from utils import set_simulation_speed
 
 def main():
     parser = argparse.ArgumentParser(description='Train two agents in PvP environment')
@@ -16,13 +15,8 @@ def main():
     parser.add_argument('--save-interval', type=int, default=100, help='Save checkpoint every N episodes')
     parser.add_argument('--resume', type=str, default=None, help='Resume from checkpoint prefix')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode with episode rendering')
-    parser.add_argument('--speed', type=float, default=1.0, help='Simulation speed multiplier (higher = faster rollouts)')
-    
+
     args = parser.parse_args()
-    
-    # Set simulation speed
-    set_simulation_speed(args.speed)
-    print(f"Simulation speed set to {args.speed}x")
     
     # Create environment
     render_mode = "human" if args.render_interval or args.verbose else None

@@ -4,21 +4,6 @@ import numpy as np
 import math
 
 PI = 3.1415
-SPEED = 1.0  # Simulation speed multiplier (higher = faster rollouts)
-
-def set_simulation_speed(speed_multiplier):
-    """Set the global simulation speed multiplier.
-    
-    Args:
-        speed_multiplier (float): Speed multiplier. 1.0 = normal speed, 
-                                 2.0 = 2x faster, 0.5 = 2x slower
-    """
-    global SPEED
-    SPEED = max(0.1, float(speed_multiplier))  # Minimum speed to avoid issues
-    
-def get_simulation_speed():
-    """Get the current simulation speed multiplier."""
-    return SPEED
 
 def normalize_vector(vector):
     """Return a normalized copy of a 2D vector."""
