@@ -9,7 +9,8 @@ import pygame
 from pvp_env import PvPEnv
 from Player import Player
 from Vars import SPEED
-from utils import i_to_dir_4, dirac_delta, normalize, flatten_them_all, dist, angle, PI
+from pvp_env import i_to_dir_4
+from utils import dirac_delta, normalize, flatten_them_all, dist, angle, PI
 
 
 class PvPEnvTwoAgents(PvPEnv):
@@ -141,8 +142,11 @@ class Agent:
         self.optimizer.step()
 
 
-def train(num_episodes=1000):
+def train(num_episodes=1000, verbose=False):
     env = PvPEnvTwoAgents()
+    if verbose:
+        env.screen = pygame.display.set_mode(env.size)
+        pygame.display.set_caption("Training PvP Agents")
     obs1, obs2 = env.get_obs()
     obs_dim = len(obs1)
     action_dim = 32
@@ -160,6 +164,14 @@ def train(num_episodes=1000):
             a1, lp1 = agent1.act(obs1)
             a2, lp2 = agent2.act(obs2)
             (obs1, obs2), (r1, r2), done, _ = env.step((a1, a2))
+            if verbose:
+                env.screen.fill((255, 255, 255))
+                env.player1.sprite.render(env.screen)
+                env.player2.sprite.render(env.screen)
+                for proj in list(Player.projectiles):
+                    proj.render(env.screen)
+                pygame.display.flip()
+                pygame.event.pump()
             log_p1.append(lp1)
             rew1.append(r1)
             log_p2.append(lp2)
@@ -171,6 +183,8 @@ def train(num_episodes=1000):
 
     torch.save(agent1.policy.state_dict(), "agent1.pth")
     torch.save(agent2.policy.state_dict(), "agent2.pth")
+    if verbose:
+        pygame.quit()
 
 
 if __name__ == "__main__":
