@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--gamma', type=float, default=0.99, help='Discount factor')
     parser.add_argument('--entropy-coef', type=float, default=0.01, help='Entropy coefficient')
     parser.add_argument('--render-interval', type=int, default=None, help='Render every N episodes')
-    parser.add_argument('--save-interval', type=int, default=100, help='Save checkpoint every N episodes')
+    parser.add_argument('--save-interval', type=int, default=1000, help='Save checkpoint every N episodes')
     parser.add_argument('--resume', type=str, default=None, help='Resume from checkpoint prefix')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode with episode rendering')
 
