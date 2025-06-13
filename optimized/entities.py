@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 import math
 import random
-from utils import normalize_vector, distance, rotate_vector, SPEED
+from utils import normalize_vector, distance, rotate_vector
 
 class Projectile(pygame.sprite.Sprite):
     """Optimized projectile class."""
@@ -43,10 +43,12 @@ class Weapon:
     """Base weapon class with common functionality."""
     
     def __init__(self, cooldown, projectile_speed=300, projectile_lifetime=2000, color=(0, 0, 255)):
-        self.cooldown = cooldown / SPEED  # Faster cooldown with higher SPEED
+        # Cooldown duration in milliseconds
+        self.cooldown = cooldown
         self.last_shot = 0
-        self.projectile_speed = projectile_speed * SPEED  # Faster projectiles with higher SPEED
-        self.projectile_lifetime = projectile_lifetime / SPEED  # Shorter lifetime to keep range similar
+        # Projectile parameters
+        self.projectile_speed = projectile_speed
+        self.projectile_lifetime = projectile_lifetime
         self.color = color
     
     def can_shoot(self):
@@ -138,7 +140,8 @@ class Player(pygame.sprite.Sprite):
         
         self.pos = np.array([screen_size[0] // 2, screen_size[1] // 2], dtype=float)
         self.velocity = np.array([0.0, 0.0])
-        self.max_speed = 150.0 * SPEED  # pixels per second, scaled by SPEED
+        # Movement speed in pixels per simulated second
+        self.max_speed = 150.0
         self.health = 3
         self.max_health = 3
         self.alive = True

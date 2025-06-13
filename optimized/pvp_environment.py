@@ -169,9 +169,9 @@ class PvPEnvironment(gym.Env):
         initial_health1 = self.player1.health
         initial_health2 = self.player2.health
         
-        dt = self.clock.get_time() / 1000.0  # Convert to seconds
-        if dt > 0.05:  # Cap delta time to avoid large jumps
-            dt = 0.05
+        dt = self.clock.get_time() / 1000.0 * SPEED  # Scale simulation time
+        if dt > 0.05 * SPEED:
+            dt = 0.05 * SPEED
         
         # Process player 1 action
         move_action1 = action1[:2]
@@ -216,7 +216,8 @@ class PvPEnvironment(gym.Env):
         obs2 = self._get_observation(2)
         
         self.steps += 1
-        self.clock.tick(int(60 * SPEED))  # FPS scaled by SPEED
+        # Keep a stable frame rate while allowing accelerated simulation
+        self.clock.tick(60)
         
         info = {
             "player1": {"health": self.player1.health, "alive": self.player1.alive},
