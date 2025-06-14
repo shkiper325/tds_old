@@ -260,18 +260,27 @@ class PvPEnvironment(gym.Env):
         
         # Victory/defeat rewards
         if not self.player2.alive:
-            reward1 += 100
-            reward2 -= 100
+            reward1 += 5
+            reward2 -= 5
         elif not self.player1.alive:
-            reward1 -= 100
-            reward2 += 100
+            reward1 -= 5
+            reward2 += 5
         
         # Small living reward to encourage survival
         if self.player1.alive:
-            reward1 += 0.1
+            reward1 -= 0.05
         if self.player2.alive:
-            reward2 += 0.1
-        
+            reward2 -= 0.05
+
+        # Wall penalty (if players are too close to walls)
+        wall_penalty = 0.3
+        if (self.player1.pos[0] < 50 or self.player1.pos[0] > self.screen_size[0] - 50 or
+            self.player1.pos[1] < 50 or self.player1.pos[1] > self.screen_size[1] - 50):
+            reward1 -= wall_penalty
+        if (self.player2.pos[0] < 50 or self.player2.pos[0] > self.screen_size[0] - 50 or
+            self.player2.pos[1] < 50 or self.player2.pos[1] > self.screen_size[1] - 50):
+            reward2 -= wall_penalty
+
         # Distance-based reward (encourage engagement)
         dist = distance(self.player1.pos, self.player2.pos)
         optimal_distance = 200  # Optimal fighting distance
