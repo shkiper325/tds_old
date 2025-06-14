@@ -8,6 +8,8 @@ from torch.distributions import Normal
 import pygame
 from collections import deque
 import matplotlib.pyplot as plt
+import os
+from torch.utils.tensorboard import SummaryWriter
 
 class PolicyNetwork(nn.Module):
     """Policy network for continuous action space."""
@@ -179,16 +181,26 @@ class REINFORCEAgent:
 class TrainingManager:
     """Manages the training process for two agents."""
     
-    def __init__(self, env, agent1, agent2, max_episodes=5000):
+    def __init__(self, env, agent1, agent2, max_episodes=5000, tensorboard_dir="tb"):
         self.env = env
         self.agent1 = agent1
         self.agent2 = agent2
         self.max_episodes = max_episodes
         
+        # Create TensorBoard writer
+        os.makedirs(tensorboard_dir, exist_ok=True)
+        self.writer = SummaryWriter(log_dir=tensorboard_dir)
+        
         # Tracking
         self.episode_rewards = deque(maxlen=100)
         self.win_rates = deque(maxlen=100)
         self.episode_lengths = deque(maxlen=100)
+        
+        # Extended tracking for more detailed metrics
+        self.agent1_rewards = deque(maxlen=100)
+        self.agent2_rewards = deque(maxlen=100)
+        self.health_differences = deque(maxlen=100)
+        self.damage_dealt = deque(maxlen=100)
         
         # Logging
         self.policy_losses = []
@@ -198,13 +210,14 @@ class TrainingManager:
         """Train both agents."""
         print(f"Starting training for {self.max_episodes} episodes...")
         print(f"Device: {self.agent1.device}")
+        print(f"TensorBoard logs will be saved to: {self.writer.log_dir}")
         
         if verbose:
             print("Verbose mode enabled - showing episode rendering")
         
         for episode in range(self.max_episodes):
             should_render = (render_interval and episode % render_interval == 0) or verbose
-            episode_reward1, episode_reward2, episode_length, winner = self._run_episode(
+            episode_reward1, episode_reward2, episode_length, winner, episode_info = self._run_episode(
                 render=should_render,
                 verbose=verbose
             )
@@ -217,12 +230,25 @@ class TrainingManager:
             self.episode_rewards.append((episode_reward1, episode_reward2))
             self.episode_lengths.append(episode_length)
             self.win_rates.append(winner)
+            self.agent1_rewards.append(episode_reward1)
+            self.agent2_rewards.append(episode_reward2)
+            
+            # Track additional metrics
+            health_diff = episode_info.get('final_health_diff', 0)
+            damage_dealt_info = episode_info.get('damage_dealt', (0, 0))
+            self.health_differences.append(health_diff)
+            self.damage_dealt.append(damage_dealt_info)
             
             if policy_loss1 > 0:  # Only track if there was an update
                 self.policy_losses.append((policy_loss1, policy_loss2))
                 self.value_losses.append((value_loss1, value_loss2))
             
-            # Logging
+            # TensorBoard logging every episode
+            self._log_to_tensorboard(episode, episode_reward1, episode_reward2, 
+                                   episode_length, winner, policy_loss1, 
+                                   policy_loss2, value_loss1, value_loss2, episode_info)
+            
+            # Console logging
             if (episode + 1) % 10 == 0:
                 avg_reward1 = np.mean([r[0] for r in list(self.episode_rewards)[-10:]])
                 avg_reward2 = np.mean([r[1] for r in list(self.episode_rewards)[-10:]])
@@ -232,10 +258,14 @@ class TrainingManager:
                 win_rate2 = np.mean([1 for w in list(self.win_rates)[-10:] if w == 2])
                 draw_rate = np.mean([1 for w in list(self.win_rates)[-10:] if w == 0])
                 
+                # Average reward for last 100 episodes (key metric)
+                avg_reward_100_ep = np.mean([r[0] + r[1] for r in list(self.episode_rewards)]) / 2
+                
                 print(f"Episode {episode + 1:4d} | "
                       f"Avg Reward: {avg_reward1:6.2f}/{avg_reward2:6.2f} | "
                       f"Win Rate: {win_rate1:.2f}/{win_rate2:.2f}/{draw_rate:.2f} | "
-                      f"Length: {avg_length:.1f}")
+                      f"Length: {avg_length:.1f} | "
+                      f"Avg100: {avg_reward_100_ep:.2f}")
             
             # Save checkpoints
             if (episode + 1) % save_interval == 0:
@@ -245,6 +275,119 @@ class TrainingManager:
         print("Training completed!")
         self.save_checkpoint("final_model")
         self.plot_training_progress()
+        self.writer.close()
+    
+    def _log_to_tensorboard(self, episode, reward1, reward2, episode_length, winner, 
+                           policy_loss1, policy_loss2, value_loss1, value_loss2, episode_info):
+        """Log metrics to TensorBoard."""
+        
+        # Basic episode metrics
+        self.writer.add_scalar('Episode/Reward_Agent1', reward1, episode)
+        self.writer.add_scalar('Episode/Reward_Agent2', reward2, episode)
+        self.writer.add_scalar('Episode/Combined_Reward', reward1 + reward2, episode)
+        self.writer.add_scalar('Episode/Length', episode_length, episode)
+        
+        # Winner tracking
+        self.writer.add_scalar('Episode/Winner', winner, episode)
+        
+        # Losses (if available)
+        if policy_loss1 > 0:
+            self.writer.add_scalar('Training/Policy_Loss_Agent1', policy_loss1, episode)
+            self.writer.add_scalar('Training/Policy_Loss_Agent2', policy_loss2, episode)
+        if value_loss1 > 0:
+            self.writer.add_scalar('Training/Value_Loss_Agent1', value_loss1, episode)
+            self.writer.add_scalar('Training/Value_Loss_Agent2', value_loss2, episode)
+        
+        # Rolling averages - key metrics
+        if len(self.episode_rewards) >= 10:
+            # Last 10 episodes
+            avg_reward1_10 = np.mean(list(self.agent1_rewards)[-10:])
+            avg_reward2_10 = np.mean(list(self.agent2_rewards)[-10:])
+            avg_combined_10 = (avg_reward1_10 + avg_reward2_10) / 2
+            
+            self.writer.add_scalar('Averages/Reward_Agent1_10ep', avg_reward1_10, episode)
+            self.writer.add_scalar('Averages/Reward_Agent2_10ep', avg_reward2_10, episode)
+            self.writer.add_scalar('Averages/Combined_Reward_10ep', avg_combined_10, episode)
+            
+            # Win rates (last 10)
+            recent_wins = list(self.win_rates)[-10:]
+            win_rate1_10 = sum(1 for w in recent_wins if w == 1) / len(recent_wins)
+            win_rate2_10 = sum(1 for w in recent_wins if w == 2) / len(recent_wins)
+            draw_rate_10 = sum(1 for w in recent_wins if w == 0) / len(recent_wins)
+            
+            self.writer.add_scalar('WinRates/Agent1_10ep', win_rate1_10, episode)
+            self.writer.add_scalar('WinRates/Agent2_10ep', win_rate2_10, episode)
+            self.writer.add_scalar('WinRates/Draw_10ep', draw_rate_10, episode)
+        
+        # КЛЮЧЕВАЯ МЕТРИКА: Средний reward за последние 100 роллаутов
+        if len(self.episode_rewards) >= 50:
+            # Last 50 episodes (or all if less than 100)
+            recent_rewards = list(self.episode_rewards)[-50:]
+            avg_reward1_50 = np.mean([r[0] for r in recent_rewards])
+            avg_reward2_50 = np.mean([r[1] for r in recent_rewards])
+            avg_combined_50 = (avg_reward1_50 + avg_reward2_50) / 2
+            
+            self.writer.add_scalar('Averages/Reward_Agent1_50ep', avg_reward1_50, episode)
+            self.writer.add_scalar('Averages/Reward_Agent2_50ep', avg_reward2_50, episode)
+            self.writer.add_scalar('Averages/Combined_Reward_50ep', avg_combined_50, episode)
+        
+        # Полные 100 эпизодов
+        if len(self.episode_rewards) >= 100:
+            # ГЛАВНАЯ МЕТРИКА: Last 100 episodes
+            recent_100_rewards = list(self.episode_rewards)[-100:]
+            avg_reward1_100 = np.mean([r[0] for r in recent_100_rewards])
+            avg_reward2_100 = np.mean([r[1] for r in recent_100_rewards])
+            avg_combined_100 = (avg_reward1_100 + avg_reward2_100) / 2
+            
+            self.writer.add_scalar('KEY_METRICS/Reward_Agent1_100ep', avg_reward1_100, episode)
+            self.writer.add_scalar('KEY_METRICS/Reward_Agent2_100ep', avg_reward2_100, episode)
+            self.writer.add_scalar('KEY_METRICS/Combined_Reward_100ep', avg_combined_100, episode)
+            
+            # Win rates (last 100)
+            recent_wins_100 = list(self.win_rates)[-100:]
+            win_rate1_100 = sum(1 for w in recent_wins_100 if w == 1) / 100
+            win_rate2_100 = sum(1 for w in recent_wins_100 if w == 2) / 100
+            draw_rate_100 = sum(1 for w in recent_wins_100 if w == 0) / 100
+            
+            self.writer.add_scalar('KEY_METRICS/WinRate_Agent1_100ep', win_rate1_100, episode)
+            self.writer.add_scalar('KEY_METRICS/WinRate_Agent2_100ep', win_rate2_100, episode)
+            self.writer.add_scalar('KEY_METRICS/DrawRate_100ep', draw_rate_100, episode)
+            
+            # Episode length average
+            avg_length_100 = np.mean(list(self.episode_lengths)[-100:])
+            self.writer.add_scalar('KEY_METRICS/Avg_Episode_Length_100ep', avg_length_100, episode)
+        
+        # Additional detailed metrics if available
+        if episode_info:
+            # Health and damage metrics
+            if 'final_health_diff' in episode_info:
+                self.writer.add_scalar('Battle/Health_Difference', episode_info['final_health_diff'], episode)
+            
+            if 'damage_dealt' in episode_info:
+                damage1, damage2 = episode_info['damage_dealt']
+                self.writer.add_scalar('Battle/Damage_Agent1', damage1, episode)
+                self.writer.add_scalar('Battle/Damage_Agent2', damage2, episode)
+                self.writer.add_scalar('Battle/Total_Damage', damage1 + damage2, episode)
+            
+            # Player positions and movement metrics
+            if 'total_distance_moved' in episode_info:
+                dist1, dist2 = episode_info['total_distance_moved']
+                self.writer.add_scalar('Movement/Distance_Agent1', dist1, episode)
+                self.writer.add_scalar('Movement/Distance_Agent2', dist2, episode)
+            
+            # Shooting metrics
+            if 'shots_fired' in episode_info:
+                shots1, shots2 = episode_info['shots_fired']
+                self.writer.add_scalar('Combat/Shots_Agent1', shots1, episode)
+                self.writer.add_scalar('Combat/Shots_Agent2', shots2, episode)
+                
+                # Accuracy if both damage and shots are available
+                if 'damage_dealt' in episode_info and shots1 > 0:
+                    accuracy1 = episode_info['damage_dealt'][0] / shots1 if shots1 > 0 else 0
+                    accuracy2 = episode_info['damage_dealt'][1] / shots2 if shots2 > 0 else 0
+                    self.writer.add_scalar('Combat/Accuracy_Agent1', accuracy1, episode)
+                    self.writer.add_scalar('Combat/Accuracy_Agent2', accuracy2, episode)
+        self.writer.close()
     
     def _run_episode(self, render=False, verbose=False):
         """Run a single episode."""
@@ -258,6 +401,16 @@ class TrainingManager:
         episode_reward2 = 0
         step = 0
         
+        # Additional tracking for detailed metrics
+        damage_dealt1 = 0
+        damage_dealt2 = 0
+        shots_fired1 = 0
+        shots_fired2 = 0
+        distance_moved1 = 0
+        distance_moved2 = 0
+        prev_pos1 = None
+        prev_pos2 = None
+        
         if verbose:
             print(f"Starting episode... (render={render})")
         
@@ -269,6 +422,35 @@ class TrainingManager:
             
             # Step environment
             (obs1, obs2), (reward1, reward2), done, info = self.env.step([action1, action2])
+            
+            # Track additional metrics if info is available
+            if info and 'player1' in info and 'player2' in info:
+                # Track damage dealt (estimate from health changes)
+                if hasattr(self.env, 'prev_health1') and hasattr(self.env, 'prev_health2'):
+                    health_loss1 = getattr(self.env, 'prev_health1', 100) - info['player1'].get('health', 100)
+                    health_loss2 = getattr(self.env, 'prev_health2', 100) - info['player2'].get('health', 100)
+                    if health_loss1 > 0:
+                        damage_dealt2 += health_loss1
+                    if health_loss2 > 0:
+                        damage_dealt1 += health_loss2
+                
+                # Track movement (if position info available)
+                if 'x' in info['player1'] and 'y' in info['player1']:
+                    pos1 = (info['player1']['x'], info['player1']['y'])
+                    pos2 = (info['player2']['x'], info['player2']['y'])
+                    
+                    if prev_pos1 is not None:
+                        distance_moved1 += np.sqrt((pos1[0] - prev_pos1[0])**2 + (pos1[1] - prev_pos1[1])**2)
+                        distance_moved2 += np.sqrt((pos2[0] - prev_pos2[0])**2 + (pos2[1] - prev_pos2[1])**2)
+                    
+                    prev_pos1 = pos1
+                    prev_pos2 = pos2
+                
+                # Track shooting (if shooting action was taken - action[2] is typically shoot)
+                if len(action1) > 2 and action1[2] > 0.5:  # Assuming shoot action > 0.5 threshold
+                    shots_fired1 += 1
+                if len(action2) > 2 and action2[2] > 0.5:
+                    shots_fired2 += 1
             
             # Store rewards
             self.agent1.store_reward(reward1)
@@ -301,7 +483,15 @@ class TrainingManager:
         else:
             winner = 0  # Draw
         
-        return episode_reward1, episode_reward2, step, winner
+        # Prepare episode info for logging
+        episode_info = {
+            'final_health_diff': info['player1'].get('health', 0) - info['player2'].get('health', 0),
+            'damage_dealt': (damage_dealt1, damage_dealt2),
+            'shots_fired': (shots_fired1, shots_fired2),
+            'total_distance_moved': (distance_moved1, distance_moved2)
+        }
+        
+        return episode_reward1, episode_reward2, step, winner, episode_info
     
     def save_checkpoint(self, name):
         """Save training checkpoint."""

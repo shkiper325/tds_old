@@ -15,6 +15,7 @@ def main():
     parser.add_argument('--save-interval', type=int, default=1000, help='Save checkpoint every N episodes')
     parser.add_argument('--resume', type=str, default=None, help='Resume from checkpoint prefix')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode with episode rendering')
+    parser.add_argument('--tensorboard-dir', type=str, default='tb', help='TensorBoard log directory')
 
     args = parser.parse_args()
     
@@ -62,7 +63,8 @@ def main():
         env=env,
         agent1=agent1,
         agent2=agent2,
-        max_episodes=args.episodes
+        max_episodes=args.episodes,
+        tensorboard_dir=args.tensorboard_dir
     )
     
     # Start training
