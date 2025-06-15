@@ -10,7 +10,7 @@ from utils import normalize_vector, distance, angle_between, flatten_features, g
 class PvPEnvironment(gym.Env):
     """Two-agent PvP environment with continuous action space."""
     
-    def __init__(self, screen_size=(800, 600), max_steps=2000, render_mode=None):
+    def __init__(self, screen_size=(350, 350), max_steps=500, render_mode=None):
         super().__init__()
         
         self.screen_size = screen_size
