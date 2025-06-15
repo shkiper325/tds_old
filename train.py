@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--resume', type=str, default=None, help='Resume from checkpoint prefix')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode with episode rendering')
     parser.add_argument('--tensorboard-dir', type=str, default='tb', help='TensorBoard log directory')
+    parser.add_argument('--checkpoint-dir', type=str, default='checkpoints', help='Directory to save checkpoints')
 
     args = parser.parse_args()
     
@@ -51,10 +52,12 @@ def main():
     
     # Resume from checkpoint if specified
     if args.resume:
-        if os.path.exists(f"{args.resume}_agent1.pth"):
+        checkpoint_path1 = os.path.join(args.checkpoint_dir, f"{args.resume}_agent1.pth")
+        checkpoint_path2 = os.path.join(args.checkpoint_dir, f"{args.resume}_agent2.pth")
+        if os.path.exists(checkpoint_path1):
             print(f"Resuming from checkpoint: {args.resume}")
-            agent1.load(f"{args.resume}_agent1.pth")
-            agent2.load(f"{args.resume}_agent2.pth")
+            agent1.load(checkpoint_path1)
+            agent2.load(checkpoint_path2)
         else:
             print(f"Checkpoint {args.resume} not found, starting fresh")
     
@@ -64,7 +67,8 @@ def main():
         agent1=agent1,
         agent2=agent2,
         max_episodes=args.episodes,
-        tensorboard_dir=args.tensorboard_dir
+        tensorboard_dir=args.tensorboard_dir,
+        checkpoint_dir=args.checkpoint_dir
     )
     
     # Start training

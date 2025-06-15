@@ -181,11 +181,15 @@ class REINFORCEAgent:
 class TrainingManager:
     """Manages the training process for two agents."""
     
-    def __init__(self, env, agent1, agent2, max_episodes=5000, tensorboard_dir="tb"):
+    def __init__(self, env, agent1, agent2, max_episodes=5000, tensorboard_dir="tb", checkpoint_dir="checkpoints"):
         self.env = env
         self.agent1 = agent1
         self.agent2 = agent2
         self.max_episodes = max_episodes
+        self.checkpoint_dir = checkpoint_dir
+        
+        # Create checkpoint directory
+        os.makedirs(checkpoint_dir, exist_ok=True)
         
         # Create TensorBoard writer
         os.makedirs(tensorboard_dir, exist_ok=True)
@@ -495,11 +499,15 @@ class TrainingManager:
     
     def save_checkpoint(self, name):
         """Save training checkpoint."""
-        self.agent1.save(f"{name}_agent1.pth")
-        self.agent2.save(f"{name}_agent2.pth")
+        checkpoint_path1 = os.path.join(self.checkpoint_dir, f"{name}_agent1.pth")
+        checkpoint_path2 = os.path.join(self.checkpoint_dir, f"{name}_agent2.pth")
+        metrics_path = os.path.join(self.checkpoint_dir, f"{name}_metrics.npy")
+        
+        self.agent1.save(checkpoint_path1)
+        self.agent2.save(checkpoint_path2)
         
         # Save training metrics
-        np.save(f"{name}_metrics.npy", {
+        np.save(metrics_path, {
             'episode_rewards': list(self.episode_rewards),
             'win_rates': list(self.win_rates),
             'episode_lengths': list(self.episode_lengths),
