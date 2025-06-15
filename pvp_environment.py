@@ -243,52 +243,57 @@ class PvPEnvironment(gym.Env):
                 self.player2.take_damage()
     
     def _calculate_rewards(self, initial_health1, initial_health2):
-        """Calculate rewards for both players."""
-        reward1 = 0
-        reward2 = 0
+        """Shaped reward for a 1-vs-1 top-down shooter."""
+        # ---------- коэффициенты, удобно держать в одном месте ----------
+        W_DMG   = 1.0      # за каждую единицу нанесённого урона
+        W_HIT   = -1.0     # штраф за полученный урон
+        W_KILL  = 20.0     # бонус за убийство / штраф за смерть
+        W_TICK  = -0.01    # маленький штраф за каждый шаг — ускоряет матч
+        W_WALL  = -0.5     # штраф за «прилипание» к стене
+        W_DIST  = 0.3      # вес кривой «оптимальная дистанция»
+        OPT_DIST = 200     # желаемая дистанция
+        DIST_TOL = 150     # ширина колоколо-образной кривой
         
-        # Damage rewards
-        damage_to_enemy2 = initial_health2 - self.player2.health
-        damage_to_self1 = initial_health1 - self.player1.health
+        # ---------- базовый сигнал ----------
+        dmg_to_p2 = initial_health2 - self.player2.health
+        dmg_to_p1 = initial_health1 - self.player1.health
         
-        damage_to_enemy1 = initial_health1 - self.player1.health
-        damage_to_self2 = initial_health2 - self.player2.health
+        reward1  = W_DMG * dmg_to_p2 + W_HIT * dmg_to_p1
+        reward2  = W_DMG * dmg_to_p1 + W_HIT * dmg_to_p2
         
-        # Reward for damaging opponent, penalty for taking damage
-        reward1 += damage_to_enemy2 * 10 - damage_to_self1 * 10
-        reward2 += damage_to_enemy1 * 10 - damage_to_self2 * 10
-        
-        # Victory/defeat rewards
-        if not self.player2.alive:
-            reward1 += 5
-            reward2 -= 5
-        elif not self.player1.alive:
-            reward1 -= 5
-            reward2 += 5
-        
-        # Small living reward to encourage survival
-        if self.player1.alive:
-            reward1 -= 0.05
-        if self.player2.alive:
-            reward2 -= 0.05
+        # ---------- победа / поражение ----------
+        if not self.player2.alive and self.player1.alive:
+            reward1 += W_KILL
+            reward2 -= W_KILL
+        elif not self.player1.alive and self.player2.alive:
+            reward1 -= W_KILL
+            reward2 += W_KILL
 
-        # Wall penalty (if players are too close to walls)
-        wall_penalty = 0.3
-        if (self.player1.pos[0] < 50 or self.player1.pos[0] > self.screen_size[0] - 50 or
-            self.player1.pos[1] < 50 or self.player1.pos[1] > self.screen_size[1] - 50):
-            reward1 -= wall_penalty
-        if (self.player2.pos[0] < 50 or self.player2.pos[0] > self.screen_size[0] - 50 or
-            self.player2.pos[1] < 50 or self.player2.pos[1] > self.screen_size[1] - 50):
-            reward2 -= wall_penalty
-
-        # Distance-based reward (encourage engagement)
+        # ---------- шаг времени ----------
+        reward1 += W_TICK
+        reward2 += W_TICK
+        
+        # ---------- штраф за «зону стен» ----------
+        def near_wall(pos):
+            x, y = pos
+            return (
+                x < 140 or x > self.screen_size[0] - 140 or
+                y < 140 or y > self.screen_size[1] - 140
+            )
+        if near_wall(self.player1.pos):
+            reward1 += W_WALL
+        if near_wall(self.player2.pos):
+            reward2 += W_WALL
+        
+        # ---------- плавный bonus за «правильную» дистанцию ----------
+        # Гауссова кривая: максимум = 0 (идеально), всё что дальше — отрицательно.
         dist = distance(self.player1.pos, self.player2.pos)
-        optimal_distance = 200  # Optimal fighting distance
-        distance_reward = -abs(dist - optimal_distance) / 1000
-        reward1 += distance_reward
-        reward2 += distance_reward
-
+        dist_reward = -((dist - OPT_DIST) / DIST_TOL) ** 2
+        reward1 += W_DIST * dist_reward
+        reward2 += W_DIST * dist_reward
+        
         return reward1, reward2
+
 
     def render(self, mode="human"):
         """Render the environment."""
