@@ -74,12 +74,12 @@ class Weapon:
         return True
 
 class Pistol(Weapon):
-    def __init__(self):
-        super().__init__(cooldown=250, color=(0, 0, 255))
+    def __init__(self, cooldown=250, projectile_speed=300):
+        super().__init__(cooldown=cooldown, projectile_speed=projectile_speed, color=(0, 0, 255))
 
 class Shotgun(Weapon):
-    def __init__(self):
-        super().__init__(cooldown=750, color=(232, 144, 42))
+    def __init__(self, cooldown=750, projectile_speed=300):
+        super().__init__(cooldown=cooldown, projectile_speed=projectile_speed, color=(232, 144, 42))
     
     def shoot(self, owner, target_pos, projectiles_group):
         if not self.can_shoot():
@@ -104,8 +104,8 @@ class Shotgun(Weapon):
         return True
 
 class MachineGun(Weapon):
-    def __init__(self):
-        super().__init__(cooldown=100, color=(194, 54, 16))
+    def __init__(self, cooldown=100, projectile_speed=300):
+        super().__init__(cooldown=cooldown, projectile_speed=projectile_speed, color=(194, 54, 16))
     
     def shoot(self, owner, target_pos, projectiles_group):
         if not self.can_shoot():
@@ -132,7 +132,7 @@ class MachineGun(Weapon):
 class Player(pygame.sprite.Sprite):
     """Optimized player class."""
     
-    def __init__(self, screen_size, color=(255, 0, 0), size=100):
+    def __init__(self, screen_size, color=(255, 0, 0), size=100, max_speed=450.0, max_health=3, weapon_params=None):
         super().__init__()
         self.image = pygame.Surface([size, size])
         self.image.fill(color)
@@ -141,13 +141,18 @@ class Player(pygame.sprite.Sprite):
         self.pos = np.array([screen_size[0] // 2, screen_size[1] // 2], dtype=float)
         self.velocity = np.array([0.0, 0.0])
         # Movement speed in pixels per simulated second
-        self.max_speed = 450.0
-        self.health = 3
-        self.max_health = 3
+        self.max_speed = max_speed
+        self.health = max_health
+        self.max_health = max_health
         self.alive = True
         
-        # Weapons
-        self.weapons = [Pistol(), Shotgun(), MachineGun()]
+        # Weapons with configurable parameters
+        weapon_params = weapon_params or {}
+        self.weapons = [
+            Pistol(weapon_params.get('pistol_cooldown', 250), weapon_params.get('projectile_speed', 300.0)),
+            Shotgun(weapon_params.get('shotgun_cooldown', 750), weapon_params.get('projectile_speed', 300.0)),
+            MachineGun(weapon_params.get('machinegun_cooldown', 100), weapon_params.get('projectile_speed', 300.0))
+        ]
         self.current_weapon = 0
         
         self.screen_size = screen_size

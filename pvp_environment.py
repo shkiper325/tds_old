@@ -10,8 +10,27 @@ from utils import normalize_vector, distance, angle_between, flatten_features, g
 class PvPEnvironment(gym.Env):
     """Two-agent PvP environment with continuous action space."""
     
-    def __init__(self, screen_size=(350, 350), max_steps=500, render_mode=None):
+    def __init__(self, screen_size=(350, 350), max_steps=500, render_mode=None,
+                 player_speed=450.0, player_health=3, reward_params=None, weapon_params=None):
         super().__init__()
+        
+        self.screen_size = screen_size
+        self.max_steps = max_steps
+        self.render_mode = render_mode
+        self.player_speed = player_speed
+        self.player_health = player_health
+        
+        # Reward parameters
+        self.reward_params = reward_params or {
+            'damage': 1.0, 'hit': -1.0, 'kill': 20.0, 'tick': -0.01,
+            'wall': -0.5, 'distance': 0.3, 'optimal_distance': 200.0, 'distance_tolerance': 150.0
+        }
+        
+        # Weapon parameters  
+        self.weapon_params = weapon_params or {
+            'pistol_cooldown': 250, 'shotgun_cooldown': 750, 'machinegun_cooldown': 100,
+            'projectile_speed': 300.0
+        }
         
         self.screen_size = screen_size
         self.max_steps = max_steps
@@ -139,8 +158,12 @@ class PvPEnvironment(gym.Env):
         self.projectiles.empty()
         
         # Create players at opposite sides
-        self.player1 = Player(self.screen_size, color=(255, 0, 0))
-        self.player2 = Player(self.screen_size, color=(0, 0, 255))
+        self.player1 = Player(self.screen_size, color=(255, 0, 0), 
+                             max_speed=self.player_speed, max_health=self.player_health,
+                             weapon_params=self.weapon_params)
+        self.player2 = Player(self.screen_size, color=(0, 0, 255),
+                             max_speed=self.player_speed, max_health=self.player_health, 
+                             weapon_params=self.weapon_params)
         
         # Position players
         self.player1.pos = np.array([self.screen_size[0] * 0.25, self.screen_size[1] * 0.5])
@@ -244,15 +267,15 @@ class PvPEnvironment(gym.Env):
     
     def _calculate_rewards(self, initial_health1, initial_health2):
         """Shaped reward for a 1-vs-1 top-down shooter."""
-        # ---------- коэффициенты, удобно держать в одном месте ----------
-        W_DMG   = 1.0      # за каждую единицу нанесённого урона
-        W_HIT   = -1.0     # штраф за полученный урон
-        W_KILL  = 20.0     # бонус за убийство / штраф за смерть
-        W_TICK  = -0.01    # маленький штраф за каждый шаг — ускоряет матч
-        W_WALL  = -0.5     # штраф за «прилипание» к стене
-        W_DIST  = 0.3      # вес кривой «оптимальная дистанция»
-        OPT_DIST = 200     # желаемая дистанция
-        DIST_TOL = 150     # ширина колоколо-образной кривой
+        # Get reward parameters
+        W_DMG = self.reward_params['damage']
+        W_HIT = self.reward_params['hit']
+        W_KILL = self.reward_params['kill']
+        W_TICK = self.reward_params['tick']
+        W_WALL = self.reward_params['wall']
+        W_DIST = self.reward_params['distance']
+        OPT_DIST = self.reward_params['optimal_distance']
+        DIST_TOL = self.reward_params['distance_tolerance']
         
         # ---------- базовый сигнал ----------
         dmg_to_p2 = initial_health2 - self.player2.health

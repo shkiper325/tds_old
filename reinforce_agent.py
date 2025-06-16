@@ -53,17 +53,19 @@ class PolicyNetwork(nn.Module):
 class REINFORCEAgent:
     """REINFORCE agent with baseline and continuous actions."""
     
-    def __init__(self, obs_dim, action_dim, lr=3e-4, gamma=0.99, entropy_coef=0.01):
+    def __init__(self, obs_dim, action_dim, lr=3e-4, gamma=0.99, entropy_coef=0.01, 
+                 hidden_dims=[128, 128], grad_clip=0.5):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.grad_clip = grad_clip
         
         # Networks
-        self.policy_net = PolicyNetwork(obs_dim, action_dim).to(self.device)
+        self.policy_net = PolicyNetwork(obs_dim, action_dim, hidden_dims).to(self.device)
         self.value_net = nn.Sequential(
-            nn.Linear(obs_dim, 128),
+            nn.Linear(obs_dim, hidden_dims[0]),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(hidden_dims[0], hidden_dims[-1]),
             nn.ReLU(),
-            nn.Linear(128, 1)
+            nn.Linear(hidden_dims[-1], 1)
         ).to(self.device)
         
         # Optimizers
@@ -148,13 +150,13 @@ class REINFORCEAgent:
         # Update policy network
         self.policy_optimizer.zero_grad()
         total_policy_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), 0.5)
+        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), self.grad_clip)
         self.policy_optimizer.step()
         
         # Update value network
         self.value_optimizer.zero_grad()
         value_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.value_net.parameters(), 0.5)
+        torch.nn.utils.clip_grad_norm_(self.value_net.parameters(), self.grad_clip)
         self.value_optimizer.step()
         
         self.reset_episode()
