@@ -6,7 +6,7 @@ import argparse
 from pvp_environment import PvPEnvironment
 from reinforce_agent import REINFORCEAgent
 
-def evaluate_agents(agent1_path, agent2_path, num_episodes=10, render=True):
+def evaluate_agents(agent1_path, agent2_path, num_episodes=10, render=True, hidden_dims=[128, 128]):
     """Evaluate two trained agents."""
     
     # Create environment
@@ -15,9 +15,9 @@ def evaluate_agents(agent1_path, agent2_path, num_episodes=10, render=True):
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     
-    # Load agents
-    agent1 = REINFORCEAgent(obs_dim, action_dim)
-    agent2 = REINFORCEAgent(obs_dim, action_dim)
+    # Load agents with specified architecture
+    agent1 = REINFORCEAgent(obs_dim, action_dim, hidden_dims=hidden_dims)
+    agent2 = REINFORCEAgent(obs_dim, action_dim, hidden_dims=hidden_dims)
     
     agent1.load(agent1_path)
     agent2.load(agent2_path)
@@ -101,7 +101,7 @@ def evaluate_agents(agent1_path, agent2_path, num_episodes=10, render=True):
     env.close()
     return results
 
-def human_vs_agent(agent_path, human_player=1):
+def human_vs_agent(agent_path, human_player=1, hidden_dims=[128, 128]):
     """Let a human play against a trained agent."""
     import torch
     
@@ -110,8 +110,8 @@ def human_vs_agent(agent_path, human_player=1):
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     
-    # Load agent
-    agent = REINFORCEAgent(obs_dim, action_dim)
+    # Load agent with specified architecture
+    agent = REINFORCEAgent(obs_dim, action_dim, hidden_dims=hidden_dims)
     agent.load(agent_path)
     agent.policy_net.eval()
     
@@ -223,6 +223,7 @@ def main():
     parser.add_argument('--no-render', action='store_true', help='Disable rendering')
     parser.add_argument('--human', action='store_true', help='Human vs agent mode')
     parser.add_argument('--human-player', type=int, default=1, choices=[1, 2], help='Which player is human (1 or 2)')
+    parser.add_argument('--hidden-dims', type=int, nargs='+', default=[128, 128], help='Hidden layer dimensions')
     
     args = parser.parse_args()
     
@@ -230,9 +231,9 @@ def main():
         args.agent2 = args.agent1
     
     if args.human:
-        human_vs_agent(args.agent1 if args.human_player == 2 else args.agent2, args.human_player)
+        human_vs_agent(args.agent1 if args.human_player == 2 else args.agent2, args.human_player, args.hidden_dims)
     else:
-        evaluate_agents(args.agent1, args.agent2, args.episodes, not args.no_render)
+        evaluate_agents(args.agent1, args.agent2, args.episodes, not args.no_render, args.hidden_dims)
 
 if __name__ == "__main__":
     import torch
